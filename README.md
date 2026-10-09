@@ -33,4 +33,8 @@ Later stages need Postgres and Redis: `docker compose up -d`.
 
 ```bash
 uv run --env-file .env python stages/01_first_call.py "ERROR PaymentService: duplicate transaction id TXN-123"
+
+# compare a higher effort level or a cheaper model, without editing code
+uv run --env-file .env python stages/01_first_call.py --effort medium "ERROR PaymentService: duplicate transaction id TXN-123"
+uv run --env-file .env python stages/01_first_call.py --model claude-sonnet-5-5 "ERROR PaymentService: duplicate transaction id TXN-123"
 ```
