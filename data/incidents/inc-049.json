@@ -1,0 +1,7 @@
+{
+  "id": "inc-049",
+  "service": "inventory-service",
+  "error_text": "ERROR inventory-service: currency field mismatch, expected USD got empty string in 200 records",
+  "category": "data-quality",
+  "team": "app-backend"
+}

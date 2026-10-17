@@ -1,0 +1,7 @@
+{
+  "id": "inc-035",
+  "service": "inventory-service",
+  "error_text": "ERROR inventory-service: CPU throttled at 100 percent for 10 minutes, autoscaler failed to add capacity",
+  "category": "resource-exhaustion",
+  "team": "platform-infra"
+}

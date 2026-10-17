@@ -1,0 +1,7 @@
+{
+  "id": "inc-042",
+  "service": "checkout-service",
+  "error_text": "ERROR checkout-service: PayPal API rate limit exceeded, checkout flow blocked for 10 minutes",
+  "category": "third-party",
+  "team": "payments"
+}

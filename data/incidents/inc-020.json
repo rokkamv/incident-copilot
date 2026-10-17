@@ -1,0 +1,7 @@
+{
+  "id": "inc-020",
+  "service": "search-service",
+  "error_text": "ERROR search-service: deploy v1.9.2 failed, missing environment variable SEARCH_INDEX_URL",
+  "category": "deploy",
+  "team": "platform-infra"
+}

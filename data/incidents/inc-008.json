@@ -1,0 +1,7 @@
+{
+  "id": "inc-008",
+  "service": "user-service",
+  "error_text": "ERROR UserDB: connection refused, max_connections limit reached on primary instance",
+  "category": "database",
+  "team": "database-eng"
+}

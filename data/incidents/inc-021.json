@@ -1,0 +1,7 @@
+{
+  "id": "inc-021",
+  "service": "orders-service",
+  "error_text": "ERROR orders-service: image pull failed for tag v2.14.1, registry authentication error",
+  "category": "deploy",
+  "team": "platform-infra"
+}

@@ -1,0 +1,7 @@
+{
+  "id": "inc-007",
+  "service": "inventory-service",
+  "error_text": "ERROR InventoryDB: migration failed at step 4, column stock_count already exists",
+  "category": "database",
+  "team": "database-eng"
+}

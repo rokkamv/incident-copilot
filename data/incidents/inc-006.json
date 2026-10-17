@@ -1,0 +1,7 @@
+{
+  "id": "inc-006",
+  "service": "billing-service",
+  "error_text": "FATAL: disk space critical on primary billing database, 97 percent full, writes failing",
+  "category": "database",
+  "team": "database-eng"
+}

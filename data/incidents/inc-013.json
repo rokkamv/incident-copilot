@@ -1,0 +1,7 @@
+{
+  "id": "inc-013",
+  "service": "auth-service",
+  "error_text": "ERROR auth-service: network partition detected, cannot reach redis cluster for session lookup",
+  "category": "network",
+  "team": "networking"
+}

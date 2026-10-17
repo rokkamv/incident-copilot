@@ -1,0 +1,7 @@
+{
+  "id": "inc-040",
+  "service": "checkout-service",
+  "error_text": "ERROR checkout-service: webhook from PayPal arrived with invalid signature, charge confirmation dropped",
+  "category": "third-party",
+  "team": "payments"
+}

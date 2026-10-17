@@ -1,0 +1,7 @@
+{
+  "id": "inc-005",
+  "service": "orders-service",
+  "error_text": "ERROR OrdersDB: query timeout after 30s on orders_history table, missing index on customer_id",
+  "category": "database",
+  "team": "database-eng"
+}

@@ -1,0 +1,7 @@
+{
+  "id": "inc-036",
+  "service": "billing-service",
+  "error_text": "ERROR billing-service: file descriptor limit reached, cannot open new database connections",
+  "category": "resource-exhaustion",
+  "team": "platform-infra"
+}

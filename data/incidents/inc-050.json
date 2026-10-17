@@ -1,0 +1,7 @@
+{
+  "id": "inc-050",
+  "service": "billing-service",
+  "error_text": "ERROR billing-service: invoice total mismatch, sum of line items does not equal stored total_amount",
+  "category": "data-quality",
+  "team": "app-backend"
+}

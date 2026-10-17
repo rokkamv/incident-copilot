@@ -1,0 +1,7 @@
+{
+  "id": "inc-022",
+  "service": "notification-service",
+  "error_text": "ERROR notification-service: new deploy broke startup probe, liveness check timing out after 10s",
+  "category": "deploy",
+  "team": "platform-infra"
+}
