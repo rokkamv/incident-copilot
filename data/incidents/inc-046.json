@@ -1,0 +1,7 @@
+{
+  "id": "inc-046",
+  "service": "inventory-service",
+  "error_text": "ERROR inventory-service: schema validation failed, sku field contained non-numeric characters",
+  "category": "data-quality",
+  "team": "app-backend"
+}

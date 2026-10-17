@@ -1,0 +1,7 @@
+{
+  "id": "inc-029",
+  "service": "api-gateway",
+  "error_text": "ERROR api-gateway: API key missing required scope orders:write, request rejected with 403",
+  "category": "auth",
+  "team": "security"
+}

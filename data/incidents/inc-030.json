@@ -1,0 +1,7 @@
+{
+  "id": "inc-030",
+  "service": "auth-service",
+  "error_text": "ERROR auth-service: brute force login attempts detected from single IP, account temporarily locked",
+  "category": "auth",
+  "team": "security"
+}

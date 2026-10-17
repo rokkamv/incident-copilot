@@ -1,0 +1,7 @@
+{
+  "id": "inc-044",
+  "service": "notification-service",
+  "error_text": "ERROR notification-service: SendGrid API returned 503, email delivery queue backing up",
+  "category": "third-party",
+  "team": "app-backend"
+}

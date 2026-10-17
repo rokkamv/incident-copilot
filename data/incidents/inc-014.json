@@ -1,0 +1,7 @@
+{
+  "id": "inc-014",
+  "service": "api-gateway",
+  "error_text": "ERROR api-gateway: load balancer health check failing for inventory-service, marking endpoint unhealthy",
+  "category": "network",
+  "team": "networking"
+}

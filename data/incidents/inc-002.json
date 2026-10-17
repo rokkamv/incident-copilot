@@ -1,0 +1,7 @@
+{
+  "id": "inc-002",
+  "service": "inventory-service",
+  "error_text": "FATAL: deadlock detected on table inventory_items while updating stock_count, transaction rolled back",
+  "category": "database",
+  "team": "database-eng"
+}

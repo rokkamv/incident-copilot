@@ -1,0 +1,7 @@
+{
+  "id": "inc-004",
+  "service": "user-service",
+  "error_text": "ERROR UserDB: unique constraint violation on email column during signup, duplicate key value",
+  "category": "database",
+  "team": "database-eng"
+}

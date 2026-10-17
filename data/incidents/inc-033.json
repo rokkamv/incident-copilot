@@ -1,0 +1,7 @@
+{
+  "id": "inc-033",
+  "service": "api-gateway",
+  "error_text": "ERROR api-gateway: rate limit exceeded, 429 responses spiking to 40 percent of traffic during flash sale",
+  "category": "resource-exhaustion",
+  "team": "platform-infra"
+}

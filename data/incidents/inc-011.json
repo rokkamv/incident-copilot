@@ -1,0 +1,7 @@
+{
+  "id": "inc-011",
+  "service": "api-gateway",
+  "error_text": "ERROR api-gateway: TLS handshake timeout connecting to billing-service, certificate negotiation failed",
+  "category": "network",
+  "team": "networking"
+}

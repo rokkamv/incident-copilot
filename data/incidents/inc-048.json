@@ -1,0 +1,7 @@
+{
+  "id": "inc-048",
+  "service": "orders-service",
+  "error_text": "ERROR orders-service: negative quantity value accepted for order line item, validation bypassed",
+  "category": "data-quality",
+  "team": "app-backend"
+}

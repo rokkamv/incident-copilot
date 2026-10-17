@@ -1,0 +1,7 @@
+{
+  "id": "inc-009",
+  "service": "api-gateway",
+  "error_text": "ERROR api-gateway: upstream connection refused to search-service:8080 after 3 retries",
+  "category": "network",
+  "team": "networking"
+}

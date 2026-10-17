@@ -1,0 +1,7 @@
+{
+  "id": "inc-041",
+  "service": "payments-gateway",
+  "error_text": "ERROR payments-gateway: StripeAPI returned 500 Internal Server Error on refund request",
+  "category": "third-party",
+  "team": "payments"
+}

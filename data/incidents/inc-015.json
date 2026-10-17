@@ -1,0 +1,7 @@
+{
+  "id": "inc-015",
+  "service": "search-service",
+  "error_text": "ERROR search-service: socket timeout after 5s connecting to elasticsearch cluster node",
+  "category": "network",
+  "team": "networking"
+}

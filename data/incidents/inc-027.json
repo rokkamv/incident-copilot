@@ -1,0 +1,7 @@
+{
+  "id": "inc-027",
+  "service": "user-service",
+  "error_text": "ERROR user-service: password reset token reused, possible replay attack detected",
+  "category": "auth",
+  "team": "security"
+}
