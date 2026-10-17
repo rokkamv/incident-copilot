@@ -1,0 +1,7 @@
+{
+  "id": "inc-012",
+  "service": "search-service",
+  "error_text": "ERROR search-service: connection reset by peer while streaming results to api-gateway",
+  "category": "network",
+  "team": "networking"
+}

@@ -1,0 +1,7 @@
+{
+  "id": "inc-024",
+  "service": "billing-service",
+  "error_text": "ERROR billing-service: deploy rolled back automatically, error rate exceeded 5 percent threshold post-release",
+  "category": "deploy",
+  "team": "platform-infra"
+}

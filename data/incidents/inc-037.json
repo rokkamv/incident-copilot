@@ -1,0 +1,7 @@
+{
+  "id": "inc-037",
+  "service": "search-service",
+  "error_text": "ERROR search-service: disk I/O saturated during bulk reindex, query latency p99 exceeds 8s",
+  "category": "resource-exhaustion",
+  "team": "platform-infra"
+}

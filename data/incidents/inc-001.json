@@ -1,0 +1,7 @@
+{
+  "id": "inc-001",
+  "service": "orders-service",
+  "error_text": "ERROR OrdersDB: connection pool exhausted after 50 concurrent requests, query queue depth 312",
+  "category": "database",
+  "team": "database-eng"
+}

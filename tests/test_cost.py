@@ -9,5 +9,5 @@ def test_estimate_cost_opus():
 
 
 def test_unknown_model_raises():
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError, match="not-a-model"):
         estimate_cost("not-a-model", 1, 1)

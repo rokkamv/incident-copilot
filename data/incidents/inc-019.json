@@ -1,0 +1,7 @@
+{
+  "id": "inc-019",
+  "service": "checkout-service",
+  "error_text": "ERROR checkout-service: canary deployment failing health checks, rolling back to previous version",
+  "category": "deploy",
+  "team": "platform-infra"
+}

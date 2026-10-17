@@ -1,0 +1,7 @@
+{
+  "id": "inc-038",
+  "service": "checkout-service",
+  "error_text": "ERROR checkout-service: connection pool exhausted under load, 503s returned to 15 percent of checkout requests",
+  "category": "resource-exhaustion",
+  "team": "platform-infra"
+}

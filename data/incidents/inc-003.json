@@ -1,0 +1,7 @@
+{
+  "id": "inc-003",
+  "service": "billing-service",
+  "error_text": "WARN BillingDB: replication lag 340s on read replica, stale balance reads possible",
+  "category": "database",
+  "team": "database-eng"
+}

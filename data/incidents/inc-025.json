@@ -1,0 +1,7 @@
+{
+  "id": "inc-025",
+  "service": "auth-service",
+  "error_text": "ERROR auth-service: JWT signature verification failed, token expired 14 minutes ago",
+  "category": "auth",
+  "team": "security"
+}

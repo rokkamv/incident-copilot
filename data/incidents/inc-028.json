@@ -1,0 +1,7 @@
+{
+  "id": "inc-028",
+  "service": "auth-service",
+  "error_text": "ERROR auth-service: OAuth refresh token revoked, client must re-authenticate",
+  "category": "auth",
+  "team": "security"
+}

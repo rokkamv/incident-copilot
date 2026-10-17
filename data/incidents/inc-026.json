@@ -1,0 +1,7 @@
+{
+  "id": "inc-026",
+  "service": "api-gateway",
+  "error_text": "ERROR api-gateway: SSO callback rejected, SAML assertion signature mismatch with identity provider",
+  "category": "auth",
+  "team": "security"
+}

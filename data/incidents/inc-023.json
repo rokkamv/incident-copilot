@@ -1,0 +1,7 @@
+{
+  "id": "inc-023",
+  "service": "checkout-service",
+  "error_text": "ERROR checkout-service: database migration script failed during deploy, schema out of sync",
+  "category": "deploy",
+  "team": "platform-infra"
+}

@@ -1,0 +1,7 @@
+{
+  "id": "inc-016",
+  "service": "user-service",
+  "error_text": "ERROR user-service: intermittent packet loss to orders-service, 40 percent of requests timing out",
+  "category": "network",
+  "team": "networking"
+}

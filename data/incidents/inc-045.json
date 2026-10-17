@@ -1,0 +1,7 @@
+{
+  "id": "inc-045",
+  "service": "orders-service",
+  "error_text": "ERROR orders-service: null pointer on order.customer_id, malformed payload missing required field",
+  "category": "data-quality",
+  "team": "app-backend"
+}

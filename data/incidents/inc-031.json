@@ -1,0 +1,7 @@
+{
+  "id": "inc-031",
+  "service": "user-service",
+  "error_text": "ERROR user-service: session token signature invalid, possible tampering detected",
+  "category": "auth",
+  "team": "security"
+}

@@ -1,0 +1,7 @@
+{
+  "id": "inc-032",
+  "service": "search-service",
+  "error_text": "ERROR search-service: OutOfMemoryError, heap usage hit 98 percent during index rebuild",
+  "category": "resource-exhaustion",
+  "team": "platform-infra"
+}
