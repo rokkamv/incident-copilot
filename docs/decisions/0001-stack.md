@@ -16,3 +16,9 @@ and store embeddings in PostgreSQL with pgvector.
 
 - A dedicated vector database: one more service to run, with no benefit at this data size.
 - Rails or Spring Boot: workable, but AI tooling and examples lag behind Python.
+
+---
+
+**Extended by [0005](0005-multi-provider-llm-abstraction.md):** the Anthropic SDK is still
+fully supported, but is no longer the implicit default - LLM provider/model/API key are now
+mandatory, explicit settings, and OpenAI is supported as a second provider.

@@ -1,10 +1,9 @@
 import importlib.util
 import pathlib
-import types
 
-import anthropic
-import httpx
 import pytest
+
+from copilot import llm
 
 STAGE_PATH = pathlib.Path(__file__).resolve().parent.parent / "stages" / "01_first_call.py"
 
@@ -21,54 +20,32 @@ def stage():
     return _load_stage()
 
 
-def _fake_response(
-    *,
-    stop_reason="end_turn",
-    text="1. Cause A\n2. Cause B\n3. Cause C",
-    input_tokens=100,
-    output_tokens=50,
-):
-    return types.SimpleNamespace(
-        stop_reason=stop_reason,
-        content=[types.SimpleNamespace(type="text", text=text)],
-        usage=types.SimpleNamespace(input_tokens=input_tokens, output_tokens=output_tokens),
-    )
+def _fake_llm_response(**overrides):
+    defaults = {
+        "text": "1. Cause A\n2. Cause B\n3. Cause C",
+        "tool_input": None,
+        "refused": False,
+        "truncated": False,
+        "input_tokens": 100,
+        "output_tokens": 50,
+        "stop_reason": "end_turn",
+    }
+    return llm.LLMResponse(**{**defaults, **overrides})
 
 
-class _FakeMessages:
-    def __init__(self, response=None, exc=None):
-        self._response = response
-        self._exc = exc
+def _install_fake_complete(monkeypatch, stage, response=None, exc=None):
+    def _complete(*args, **kwargs):
+        if exc:
+            raise exc
+        return response
 
-    def create(self, **kwargs):
-        if self._exc:
-            raise self._exc
-        return self._response
-
-
-class _FakeClient:
-    def __init__(self, messages):
-        self.messages = messages
-
-
-def _install_fake_client(monkeypatch, stage, response=None, exc=None):
-    monkeypatch.setattr(
-        stage.anthropic,
-        "Anthropic",
-        lambda: _FakeClient(_FakeMessages(response=response, exc=exc)),
-    )
-
-
-def _fake_api_error(exc_type, status_code):
-    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
-    response = httpx.Response(status_code, request=request, json={"type": "error"})
-    return exc_type("boom", response=response, body=None)
+    monkeypatch.setattr(stage.llm, "complete", _complete)
 
 
 def test_happy_path(monkeypatch, stage, capsys):
-    _install_fake_client(monkeypatch, stage, response=_fake_response())
+    _install_fake_complete(monkeypatch, stage, response=_fake_llm_response())
 
-    exit_code = stage.run("ERROR boom", model="claude-haiku-5-5", effort="low")
+    exit_code = stage.run("ERROR boom", model="claude-haiku-5-5", effort="low", provider="anthropic")
 
     assert exit_code == 0
     out = capsys.readouterr().out
@@ -78,18 +55,20 @@ def test_happy_path(monkeypatch, stage, capsys):
 
 
 def test_refusal(monkeypatch, stage, capsys):
-    _install_fake_client(monkeypatch, stage, response=_fake_response(stop_reason="refusal"))
+    _install_fake_complete(monkeypatch, stage, response=_fake_llm_response(refused=True, stop_reason="refusal"))
 
-    exit_code = stage.run("ERROR boom", model="claude-haiku-5-5", effort="low")
+    exit_code = stage.run("ERROR boom", model="claude-haiku-5-5", effort="low", provider="anthropic")
 
     assert exit_code != 0
     assert "declined" in capsys.readouterr().err
 
 
 def test_max_tokens_warns_but_still_prints(monkeypatch, stage, capsys):
-    _install_fake_client(monkeypatch, stage, response=_fake_response(stop_reason="max_tokens"))
+    _install_fake_complete(
+        monkeypatch, stage, response=_fake_llm_response(truncated=True, stop_reason="max_tokens")
+    )
 
-    exit_code = stage.run("ERROR boom", model="claude-haiku-5-5", effort="low")
+    exit_code = stage.run("ERROR boom", model="claude-haiku-5-5", effort="low", provider="anthropic")
 
     captured = capsys.readouterr()
     assert exit_code == 0
@@ -106,56 +85,106 @@ def test_missing_cli_arg_exits_nonzero(stage, capsys):
 
 
 def test_unknown_model_fails_before_any_api_call(monkeypatch, stage):
-    def _should_not_be_called():
-        raise AssertionError("Anthropic client should not be constructed for an unknown model")
+    def _should_not_be_called(*args, **kwargs):
+        raise AssertionError("llm.complete should not be called for an unknown model")
 
-    monkeypatch.setattr(stage.anthropic, "Anthropic", _should_not_be_called)
+    monkeypatch.setattr(stage.llm, "complete", _should_not_be_called)
 
-    exit_code = stage.run("ERROR boom", model="not-a-real-model", effort="low")
+    exit_code = stage.run("ERROR boom", model="not-a-real-model", effort="low", provider="anthropic")
 
     assert exit_code != 0
 
 
 def test_authentication_error(monkeypatch, stage, capsys):
-    _install_fake_client(
-        monkeypatch, stage, exc=_fake_api_error(anthropic.AuthenticationError, 401)
-    )
+    _install_fake_complete(monkeypatch, stage, exc=llm.LLMAuthenticationError("boom"))
 
-    exit_code = stage.run("ERROR boom", model="claude-haiku-5-5", effort="low")
+    exit_code = stage.run("ERROR boom", model="claude-haiku-5-5", effort="low", provider="anthropic")
 
     assert exit_code != 0
     assert "API key" in capsys.readouterr().err
 
 
 def test_rate_limit_error(monkeypatch, stage, capsys):
-    _install_fake_client(
-        monkeypatch, stage, exc=_fake_api_error(anthropic.RateLimitError, 429)
-    )
+    _install_fake_complete(monkeypatch, stage, exc=llm.LLMRateLimitError("boom"))
 
-    exit_code = stage.run("ERROR boom", model="claude-haiku-5-5", effort="low")
+    exit_code = stage.run("ERROR boom", model="claude-haiku-5-5", effort="low", provider="anthropic")
 
     assert exit_code != 0
     assert "rate limited" in capsys.readouterr().err
 
 
 def test_api_status_error(monkeypatch, stage, capsys):
-    _install_fake_client(
-        monkeypatch, stage, exc=_fake_api_error(anthropic.InternalServerError, 500)
-    )
+    _install_fake_complete(monkeypatch, stage, exc=llm.LLMAPIStatusError("boom", 500))
 
-    exit_code = stage.run("ERROR boom", model="claude-haiku-5-5", effort="low")
+    exit_code = stage.run("ERROR boom", model="claude-haiku-5-5", effort="low", provider="anthropic")
 
     assert exit_code != 0
     assert "500" in capsys.readouterr().err
 
 
-def test_api_connection_error(monkeypatch, stage, capsys):
-    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
-    _install_fake_client(
-        monkeypatch, stage, exc=anthropic.APIConnectionError(request=request)
-    )
+def test_connection_error(monkeypatch, stage, capsys):
+    _install_fake_complete(monkeypatch, stage, exc=llm.LLMConnectionError("boom"))
 
-    exit_code = stage.run("ERROR boom", model="claude-haiku-5-5", effort="low")
+    exit_code = stage.run("ERROR boom", model="claude-haiku-5-5", effort="low", provider="anthropic")
 
     assert exit_code != 0
     assert "network" in capsys.readouterr().err
+
+
+def test_different_provider_without_model_fails_before_any_call(monkeypatch, stage):
+    monkeypatch.setattr(stage.settings, "llm_provider", "anthropic")
+    monkeypatch.setattr(stage.settings, "llm_model", "claude-haiku-5-5")
+
+    def _should_not_be_called(*args, **kwargs):
+        raise AssertionError("llm.complete should not be called")
+
+    monkeypatch.setattr(stage.llm, "complete", _should_not_be_called)
+
+    exit_code = stage.run("ERROR boom", model=None, effort="low", provider="openai")
+
+    assert exit_code != 0
+
+
+def test_main_resolves_effort_from_cli_flag_first(monkeypatch, stage):
+    captured = {}
+    monkeypatch.setattr(stage, "run", lambda *a, **k: captured.setdefault("effort", a[2]) or 0)
+    monkeypatch.setattr(stage.settings, "llm_effort", "high")
+
+    with pytest.raises(SystemExit):
+        stage.main(["--effort", "medium", "ERROR boom"])
+
+    assert captured["effort"] == "medium"
+
+
+def test_main_resolves_effort_from_env_when_no_cli_flag(monkeypatch, stage):
+    captured = {}
+    monkeypatch.setattr(stage, "run", lambda *a, **k: captured.setdefault("effort", a[2]) or 0)
+    monkeypatch.setattr(stage.settings, "llm_effort", "high")
+
+    with pytest.raises(SystemExit):
+        stage.main(["ERROR boom"])
+
+    assert captured["effort"] == "high"
+
+
+def test_main_resolves_effort_to_low_when_nothing_configured(monkeypatch, stage):
+    captured = {}
+    monkeypatch.setattr(stage, "run", lambda *a, **k: captured.setdefault("effort", a[2]) or 0)
+    monkeypatch.setattr(stage.settings, "llm_effort", None)
+
+    with pytest.raises(SystemExit):
+        stage.main(["ERROR boom"])
+
+    assert captured["effort"] == "low"
+
+
+def test_effort_noop_note_printed_for_openai(monkeypatch, stage, capsys):
+    # assert_known_model reads from the real, user-editable data/pricing.json -
+    # this test isn't about pricing validation, so stub it out rather than
+    # depend on that file's current (changeable) content.
+    monkeypatch.setattr(stage, "assert_known_model", lambda provider, model: None)
+    _install_fake_complete(monkeypatch, stage, response=_fake_llm_response())
+
+    stage.run("ERROR boom", model="gpt-test", effort="medium", provider="openai")
+
+    assert "no OpenAI equivalent" in capsys.readouterr().err
