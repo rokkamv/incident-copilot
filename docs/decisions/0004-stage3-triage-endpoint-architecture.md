@@ -17,10 +17,11 @@ function, `copilot.triage.triage()`.
   Root cause/next-steps is open-ended reasoning where the LLM earns its cost. The LLM is
   given the classifier's prediction as context rather than asked to re-derive it, so the two
   halves stay coherent instead of potentially disagreeing with each other.
-- **Tool-use with a forced, strict schema, not prompt-and-hope-for-JSON:** `tool_choice`
-  forces the `record_triage_findings` tool, and `strict: true` gets schema-validated inputs
-  from the SDK directly as a parsed dict - no manual JSON parsing or retry-on-malformed-JSON
-  logic needed.
+- **Tool-use with a forced schema, not prompt-and-hope-for-JSON:** `tool_choice` forces the
+  `record_triage_findings` tool, so the model's structured input comes back as a parsed dict
+  straight from the SDK - no manual JSON parsing or retry-on-malformed-JSON logic needed. (No
+  `strict` flag is set; the schema is enforced by forcing the tool call itself, not a separate
+  strict-mode toggle.)
 - **Startup-time training via `lifespan`, cached on `app.state`:** the synthetic dataset
   doesn't change between requests, so retraining on every call is pure wasted latency.
   Caching the fitted pipelines on `app.state` keeps `/triage` requests fast.
