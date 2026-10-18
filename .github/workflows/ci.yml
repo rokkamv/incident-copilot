@@ -14,3 +14,7 @@ jobs:
       - run: uv sync
       - run: uv run ruff check .
       - run: uv run pytest
+        env:
+          LLM_PROVIDER: openai
+          LLM_MODEL: openai/gpt-oss-120b
+          LLM_API_KEY: ci-test-key-not-real

@@ -35,3 +35,10 @@ into one-line, actionable messages instead of raw tracebacks.
 - A general-purpose cost/pricing client: over-engineering for a stage about a first API call.
 - Silently ignoring `max_tokens` truncation: hides a real failure mode instead of teaching it.
 - A custom retry/backoff loop: duplicates behavior the SDK already provides by default.
+
+---
+
+**Extended by [0005](0005-multi-provider-llm-abstraction.md):** Stage 1 now calls through
+`copilot.llm.complete()` instead of `anthropic.Anthropic()` directly, supports `--provider`/
+an OpenAI path, and the `claude-opus-5-5` default described above no longer exists -
+`LLM_MODEL` is mandatory with no default, for either provider.
