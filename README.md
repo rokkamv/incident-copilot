@@ -11,7 +11,7 @@ Built stage by stage as a hands-on way to learn AI engineering. All data is synt
 | 1 | How LLMs work, first API call | started |
 | 2 | Classic ML baseline classifier | started |
 | 3 | Prompting and structured output (`POST /triage`) | started |
-| 4 | Embeddings and retrieval (RAG) with pgvector | |
+| 4 | Embeddings and retrieval (RAG) with pgvector | started |
 | 5 | Evaluation, run in CI | |
 | 6 | Tools and agents | |
 | 7 | Production readiness: redaction, guardrails, cost | |
@@ -70,4 +70,25 @@ uv run uvicorn copilot.api:app --reload   # starts the API, training the classif
 curl -X POST http://localhost:8000/triage \
   -H "Content-Type: application/json" \
   -d '{"error_text": "ERROR PaymentGateway: timeout calling StripeAPI charge endpoint"}'
+```
+
+## Stage 4
+
+Needs Postgres running (`docker compose up -d`) and `EMBEDDING_PROVIDER`/`EMBEDDING_MODEL`/
+`EMBEDDING_API_KEY` set in `.env` - optional unlike Stage 1-3's `LLM_*` vars, since Stages 1-3
+don't need them. See decision
+[0006](docs/decisions/0006-stage4-embedding-provider.md) for the provider choice
+(Voyage AI primary, Google AI Studio second). Once embeddings are configured, `/triage`
+automatically retrieves similar past incidents and includes them (with citations, as
+`similar_incidents` in the response) as grounding context for the LLM call - no separate
+endpoint or flag needed.
+
+```bash
+docker compose up -d                      # starts Postgres with the pgvector extension
+
+# backfill: embed and store every incident in data/incidents/ (idempotent, safe to re-run)
+uv run --env-file .env python stages/04_embed_and_retrieve.py
+
+# retrieve: print the k most similar stored incidents to a new error message
+uv run --env-file .env python stages/04_embed_and_retrieve.py "ERROR PaymentGateway: timeout calling StripeAPI charge endpoint"
 ```
