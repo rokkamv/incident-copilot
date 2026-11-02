@@ -39,6 +39,16 @@ def _deterministic_lifespan_training(monkeypatch):
     monkeypatch.setattr(api, "load_incidents", lambda: INCIDENTS)
 
 
+@pytest.fixture(autouse=True)
+def _no_retrieval_by_default(monkeypatch):
+    # Stage 3's tests must not depend on whether Stage 4 happens to be
+    # configured in the developer's local .env - without this, every test here
+    # would silently start hitting the real embedding provider and Postgres the
+    # moment EMBEDDING_PROVIDER is set for real Stage 4 testing. Tests that
+    # specifically exercise retrieval override this explicitly.
+    monkeypatch.setattr(triage.settings, "embedding_provider", None)
+
+
 def _fake_response(**overrides):
     defaults = {
         "text": None,

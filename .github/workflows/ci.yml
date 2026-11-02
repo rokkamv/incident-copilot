@@ -12,9 +12,9 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg16
         env:
-          POSTGRES_USER: copilot
-          POSTGRES_PASSWORD: copilot
-          POSTGRES_DB: copilot
+          POSTGRES_USER: incident_copilot
+          POSTGRES_PASSWORD: incident_copilot
+          POSTGRES_DB: incident_copilot
         ports:
           - 5432:5432
         options: >-

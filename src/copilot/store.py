@@ -23,6 +23,25 @@ def get_connection() -> psycopg.Connection:
 
 
 def ensure_schema(conn: psycopg.Connection) -> None:
+    # CREATE TABLE IF NOT EXISTS silently no-ops against a table that already
+    # exists with a different VECTOR(n) - e.g. EMBEDDING_DIMENSIONS changed, or
+    # (as happened once) a test run left the table at a different dimension
+    # than .env's real config. Left unchecked, that surfaces much later as a
+    # cryptic "expected N dimensions" error deep inside upsert_incident, so fail
+    # fast here instead, with a message that says what to do about it.
+    existing = conn.execute(
+        """
+        SELECT atttypmod FROM pg_attribute
+        WHERE attrelid = to_regclass('incident_embeddings') AND attname = 'embedding'
+        """
+    ).fetchone()
+    if existing is not None and existing[0] != settings.embedding_dimensions:
+        raise ValueError(
+            f"incident_embeddings already exists with {existing[0]} dimensions, but "
+            f"EMBEDDING_DIMENSIONS is {settings.embedding_dimensions}. Drop the table "
+            f"(DROP TABLE incident_embeddings;) and re-run to re-embed at the new dimension."
+        )
+
     # VECTOR(n)'s dimension is a type modifier, not a value - it can't go through
     # a %s parameter placeholder, so it's composed with sql.Literal instead of an
     # f-string (which psycopg's own query type rejects: an f-string is a plain

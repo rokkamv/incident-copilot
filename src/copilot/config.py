@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     embedding_api_key: str | None = None
     embedding_dimensions: int = 1024
 
-    database_url: str = "postgresql://copilot:copilot@localhost:5432/copilot"
+    database_url: str = "postgresql://incident_copilot:incident_copilot@localhost:5432/incident_copilot"
     redis_url: str = "redis://localhost:6379/0"
 
 
