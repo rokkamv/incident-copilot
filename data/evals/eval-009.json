@@ -1,0 +1,7 @@
+{
+  "id": "eval-009",
+  "error_text": "ERROR user-service: OAuth refresh token revoked, client must re-authenticate, 1200 requests rejected in last 5 minutes",
+  "expected_category": "auth",
+  "expected_team": "security",
+  "expected_root_cause": "A batch of OAuth refresh tokens was revoked (e.g. due to a security policy change, a mass logout, or a credential rotation), so clients still holding the old refresh token are being correctly rejected until they re-authenticate."
+}

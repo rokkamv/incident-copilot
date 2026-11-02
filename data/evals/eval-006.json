@@ -1,0 +1,7 @@
+{
+  "id": "eval-006",
+  "error_text": "ERROR checkout-service: canary deployment failing health checks, rolling back to previous version v3.2.0",
+  "expected_category": "deploy",
+  "expected_team": "platform-infra",
+  "expected_root_cause": "The newly deployed canary version of checkout-service is failing its health checks - likely a startup regression, bad config, or a missing dependency introduced in the new release - so the deployment pipeline is correctly auto-rolling back."
+}

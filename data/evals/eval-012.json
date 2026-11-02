@@ -1,0 +1,7 @@
+{
+  "id": "eval-012",
+  "error_text": "ERROR payments-gateway: timeout after 25s calling StripeAPI charge endpoint, no response received, retrying",
+  "expected_category": "third-party",
+  "expected_team": "payments",
+  "expected_root_cause": "Stripe's charge API is unresponsive or severely degraded (a third-party outage or network issue between our service and Stripe), not a bug in our own payment processing code."
+}

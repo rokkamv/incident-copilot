@@ -1,0 +1,7 @@
+{
+  "id": "eval-005",
+  "error_text": "ERROR api-gateway: TLS handshake timeout connecting to inventory-service, certificate negotiation never completed",
+  "expected_category": "network",
+  "expected_team": "networking",
+  "expected_root_cause": "The TLS handshake between api-gateway and inventory-service isn't completing, likely due to network latency/packet loss between the two, an overloaded inventory-service unable to respond in time, or a certificate/cipher mismatch."
+}

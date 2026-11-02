@@ -1,0 +1,7 @@
+{
+  "id": "eval-002",
+  "error_text": "ERROR BillingDB: migration failed at step 7, column invoice_status already exists, migration aborted",
+  "expected_category": "database",
+  "expected_team": "database-eng",
+  "expected_root_cause": "A schema migration was re-run (or applied out of order) against a database that already had this column from a previous partial or duplicate run, so the migration tooling's idempotency/ordering guarantees failed."
+}

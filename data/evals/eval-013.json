@@ -1,0 +1,7 @@
+{
+  "id": "eval-013",
+  "error_text": "ERROR notification-service: SendGrid API returned 503 Service Unavailable, email delivery queue backing up",
+  "expected_category": "third-party",
+  "expected_team": "app-backend",
+  "expected_root_cause": "SendGrid's email API is returning server errors (a third-party outage or capacity issue on their side), causing our outbound email queue to back up since deliveries can't complete."
+}

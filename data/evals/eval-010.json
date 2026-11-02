@@ -1,0 +1,7 @@
+{
+  "id": "eval-010",
+  "error_text": "ERROR search-service: OutOfMemoryError, heap usage hit 97 percent during bulk reindex job, process restarted by supervisor",
+  "expected_category": "resource-exhaustion",
+  "expected_team": "platform-infra",
+  "expected_root_cause": "The bulk reindex job is loading or buffering more data into memory than the service's heap can hold (likely processing too large a batch at once, or a memory leak during indexing), exhausting available heap and forcing a restart."
+}

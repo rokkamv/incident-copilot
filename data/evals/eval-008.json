@@ -1,0 +1,7 @@
+{
+  "id": "eval-008",
+  "error_text": "ERROR auth-service: JWT signature verification failed, token expired 9000s ago, request rejected",
+  "expected_category": "auth",
+  "expected_team": "security",
+  "expected_root_cause": "The client is presenting a JWT that expired a long time ago (over two hours), most likely because the client isn't refreshing its token on expiry, or a clock-skew/refresh-flow bug is causing it to keep reusing a stale token."
+}
