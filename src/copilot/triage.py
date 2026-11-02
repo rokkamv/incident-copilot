@@ -7,7 +7,7 @@ so the output is always structured.
 
 import logging
 
-from copilot import llm
+from copilot import llm, retrieval
 from copilot.classifier import predict
 from copilot.config import settings
 from copilot.cost import assert_known_model, estimate_cost
@@ -64,7 +64,9 @@ TRIAGE_TOOL = ToolSpec(
 SYSTEM = (
     "You are a senior backend engineer helping triage a production incident. "
     "You are given an error message plus its category/team as already determined by a "
-    "separate classifier - do not re-derive or contradict those. Identify the most likely "
+    "separate classifier - do not re-derive or contradict those. If similar past incidents "
+    "are provided, use them to ground your reasoning (e.g. citing a recurring pattern), but "
+    "don't assume this incident's cause is identical to theirs. Identify the most likely "
     "root causes (most likely first) and concrete next steps for the on-call engineer, and "
     "report them using the record_triage_findings tool."
 )
@@ -103,11 +105,24 @@ def triage(
     resolved_effort = effort if effort is not None else (settings.llm_effort or llm.DEFAULT_EFFORT)
     category_and_team = predict(classifier_models, error_text)
 
-    response = llm.complete(
-        SYSTEM,
+    # Stage 4 retrieval is optional, not every stage needs it configured - no-op
+    # when EMBEDDING_PROVIDER isn't set, so Stage 3's behavior is unchanged.
+    similar_incidents = retrieval.retrieve_similar(error_text) if settings.embedding_provider else []
+
+    user_content = (
         f"Error: {error_text}\n\n"
         f"Predicted category: {category_and_team['category']}\n"
-        f"Predicted team: {category_and_team['team']}",
+        f"Predicted team: {category_and_team['team']}"
+    )
+    if similar_incidents:
+        similar_lines = "\n".join(
+            f"- [{s['category']}/{s['team']}] {s['error_text']}" for s in similar_incidents
+        )
+        user_content += f"\n\nSimilar past incidents (most similar first):\n{similar_lines}"
+
+    response = llm.complete(
+        SYSTEM,
+        user_content,
         resolved_model,
         max_tokens=4096,
         tool=TRIAGE_TOOL,
@@ -127,4 +142,8 @@ def triage(
         response.output_tokens,
     )
 
-    return {**category_and_team, **response.tool_input}
+    return {
+        **category_and_team,
+        **response.tool_input,
+        "similar_incidents": similar_incidents,
+    }

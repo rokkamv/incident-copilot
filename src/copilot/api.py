@@ -4,7 +4,7 @@ from typing import Literal
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from copilot import llm
+from copilot import embeddings, llm
 from copilot.classifier import train
 from copilot.incidents import load_incidents
 from copilot.triage import IncompleteResponse, ModelRefused, triage
@@ -39,11 +39,21 @@ class RootCause(BaseModel):
     how_to_confirm: str
 
 
+class SimilarIncident(BaseModel):
+    id: str
+    error_text: str
+    category: str
+    team: str
+    distance: float
+
+
 class TriageResponse(BaseModel):
     category: str
     team: str
     root_causes: list[RootCause]
     next_steps: list[str]
+    # Empty unless EMBEDDING_PROVIDER is configured (Stage 4) - see copilot.triage.triage().
+    similar_incidents: list[SimilarIncident]
 
 
 @app.post("/triage", response_model=TriageResponse)
@@ -64,6 +74,20 @@ def triage_endpoint(body: TriageRequest, request: Request) -> TriageResponse:
         raise HTTPException(502, f"LLM provider API returned {exc.status_code}: {exc}") from exc
     except llm.LLMMalformedToolCallError as exc:
         raise HTTPException(502, "the LLM provider returned a malformed tool call.") from exc
+    except embeddings.EmbeddingAuthenticationError as exc:
+        raise HTTPException(
+            500, "the embedding provider rejected the API key. Check EMBEDDING_API_KEY."
+        ) from exc
+    except embeddings.EmbeddingRateLimitError as exc:
+        raise HTTPException(
+            429, "rate limited by the embedding provider. Try again shortly."
+        ) from exc
+    except embeddings.EmbeddingConnectionError as exc:
+        raise HTTPException(503, "could not reach the embedding provider.") from exc
+    except embeddings.EmbeddingAPIStatusError as exc:
+        raise HTTPException(
+            502, f"embedding provider API returned {exc.status_code}: {exc}"
+        ) from exc
     except ModelRefused as exc:
         raise HTTPException(422, "the model declined to triage this input.") from exc
     except IncompleteResponse as exc:

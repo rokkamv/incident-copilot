@@ -39,6 +39,16 @@ def _deterministic_lifespan_training(monkeypatch):
     monkeypatch.setattr(api, "load_incidents", lambda: INCIDENTS)
 
 
+@pytest.fixture(autouse=True)
+def _no_retrieval_by_default(monkeypatch):
+    # Stage 3's tests must not depend on whether Stage 4 happens to be
+    # configured in the developer's local .env - without this, every test here
+    # would silently start hitting the real embedding provider and Postgres the
+    # moment EMBEDDING_PROVIDER is set for real Stage 4 testing. Tests that
+    # specifically exercise retrieval override this explicitly.
+    monkeypatch.setattr(triage.settings, "embedding_provider", None)
+
+
 def _fake_response(**overrides):
     defaults = {
         "text": None,
@@ -162,6 +172,50 @@ def test_triage_falls_back_to_low_when_nothing_configured(monkeypatch, classifie
     assert captured["effort"] == "low"
 
 
+# --- Stage 4 retrieval augmentation -----------------------------------------
+
+
+def test_triage_skips_retrieval_when_embedding_not_configured(monkeypatch, classifier_models):
+    monkeypatch.setattr(triage.settings, "embedding_provider", None)
+
+    def _should_not_be_called(*args, **kwargs):
+        raise AssertionError("retrieve_similar should not be called")
+
+    monkeypatch.setattr(triage.retrieval, "retrieve_similar", _should_not_be_called)
+    _install_fake_complete(monkeypatch, response=_fake_response())
+
+    result = triage.triage("deadlock on database table, transaction rolled back", classifier_models)
+
+    assert result["similar_incidents"] == []
+
+
+def test_triage_includes_similar_incidents_when_configured(monkeypatch, classifier_models):
+    monkeypatch.setattr(triage.settings, "embedding_provider", "voyage")
+    similar = [
+        {
+            "id": "a1",
+            "error_text": "connection pool exhausted on orders database",
+            "category": "database",
+            "team": "database-eng",
+            "distance": 0.1,
+        }
+    ]
+    monkeypatch.setattr(triage.retrieval, "retrieve_similar", lambda error_text: similar)
+
+    captured = {}
+
+    def _complete(system, user_content, *args, **kwargs):
+        captured["user_content"] = user_content
+        return _fake_response()
+
+    monkeypatch.setattr(triage.llm, "complete", _complete)
+
+    result = triage.triage("deadlock on database table, transaction rolled back", classifier_models)
+
+    assert result["similar_incidents"] == similar
+    assert "connection pool exhausted on orders database" in captured["user_content"]
+
+
 # --- FastAPI-level tests through /triage -----------------------------------
 
 
@@ -262,6 +316,16 @@ def test_endpoint_refusal_returns_422(monkeypatch):
         response = client.post("/triage", json={"error_text": "boom"})
 
     assert response.status_code == 422
+
+
+def test_endpoint_similar_incidents_defaults_to_empty_list(monkeypatch):
+    monkeypatch.setattr(triage.settings, "embedding_provider", None)
+    _install_fake_complete(monkeypatch, response=_fake_response())
+
+    with TestClient(api.app) as client:
+        response = client.post("/triage", json={"error_text": "deadlock on database table"})
+
+    assert response.json()["similar_incidents"] == []
 
 
 def test_endpoint_incomplete_response_returns_502(monkeypatch):

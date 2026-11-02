@@ -12,7 +12,17 @@ class Settings(BaseSettings):
     llm_base_url: str | None = None
     llm_effort: str | None = None
     pricing_file: str = "data/pricing.json"
-    database_url: str = "postgresql://copilot:copilot@localhost:5432/copilot"
+
+    # Optional - only needed to run Stage 4 (embeddings/retrieval). Unlike llm_provider/
+    # llm_model/llm_api_key, these have no effect on Stages 1-3, so Stage 1-3 code and
+    # tests keep working with none of them set. Validated fail-fast inside
+    # copilot.embeddings at the point of use instead.
+    embedding_provider: Literal["voyage", "google"] | None = None
+    embedding_model: str | None = None
+    embedding_api_key: str | None = None
+    embedding_dimensions: int = 1024
+
+    database_url: str = "postgresql://incident_copilot:incident_copilot@localhost:5432/incident_copilot"
     redis_url: str = "redis://localhost:6379/0"
 
 
