@@ -1,0 +1,7 @@
+{
+  "id": "eval-011",
+  "error_text": "ERROR orders-service: thread pool exhausted, 350 pending requests queued, new requests timing out after 30s",
+  "expected_category": "resource-exhaustion",
+  "expected_team": "platform-infra",
+  "expected_root_cause": "orders-service's thread pool is undersized for the current request load (or threads are being held too long by a slow downstream call), so requests queue up faster than they can be processed and eventually time out."
+}

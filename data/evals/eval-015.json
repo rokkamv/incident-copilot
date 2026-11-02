@@ -1,0 +1,7 @@
+{
+  "id": "eval-015",
+  "error_text": "ERROR billing-service: invoice total mismatch, sum of line items does not equal invoice.total for 340 invoices generated overnight",
+  "expected_category": "data-quality",
+  "expected_team": "app-backend",
+  "expected_root_cause": "A bug or rounding/calculation error in the overnight invoice-generation job is causing the stored invoice.total to drift from the sum of its line items, rather than this being a database or infrastructure issue."
+}

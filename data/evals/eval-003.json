@@ -1,0 +1,7 @@
+{
+  "id": "eval-003",
+  "error_text": "ERROR BillingDB: replication lag 410s on read replica, stale invoice totals being served to checkout-service",
+  "expected_category": "database",
+  "expected_team": "database-eng",
+  "expected_root_cause": "The read replica is falling significantly behind the primary (likely due to write volume outpacing replication bandwidth, or a long-running transaction on the primary), so reads from the replica return stale data."
+}

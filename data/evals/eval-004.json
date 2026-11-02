@@ -1,0 +1,7 @@
+{
+  "id": "eval-004",
+  "error_text": "ERROR user-service: DNS resolution failed for internal host billing-service.internal, lookup timed out after 5s",
+  "expected_category": "network",
+  "expected_team": "networking",
+  "expected_root_cause": "Internal DNS resolution for billing-service is failing or timing out, likely due to a DNS server/resolver issue or a stale/missing service-discovery record, preventing user-service from locating billing-service at all."
+}

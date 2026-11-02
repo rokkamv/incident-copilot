@@ -1,0 +1,7 @@
+{
+  "id": "eval-014",
+  "error_text": "ERROR inventory-service: schema validation failed, sku field contained null for 1,200 records in latest import batch",
+  "expected_category": "data-quality",
+  "expected_team": "app-backend",
+  "expected_root_cause": "The upstream data source (or import pipeline) is producing records with a missing required sku field, likely due to a change in the source format or a bug in an upstream export job, not validated before ingestion."
+}

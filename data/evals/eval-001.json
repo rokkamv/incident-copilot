@@ -1,0 +1,7 @@
+{
+  "id": "eval-001",
+  "error_text": "ERROR OrdersDB: connection pool exhausted, 80 concurrent requests waiting, no connections available for 45s",
+  "expected_category": "database",
+  "expected_team": "database-eng",
+  "expected_root_cause": "The orders database's connection pool is too small for the current concurrent request volume (or a slow query is holding connections open too long), so new requests queue and eventually time out instead of completing."
+}

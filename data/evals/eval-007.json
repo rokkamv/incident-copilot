@@ -1,0 +1,7 @@
+{
+  "id": "eval-007",
+  "error_text": "ERROR orders-service: container crashed on startup after deploy v4.1.0, exit code 1, missing required env var PAYMENTS_API_URL",
+  "expected_category": "deploy",
+  "expected_team": "platform-infra",
+  "expected_root_cause": "The new deploy's container configuration is missing a required environment variable (PAYMENTS_API_URL), so the service fails its startup validation and exits immediately - a deployment/config omission, not a runtime bug in the application logic."
+}
