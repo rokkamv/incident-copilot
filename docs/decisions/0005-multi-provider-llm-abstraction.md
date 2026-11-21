@@ -98,3 +98,11 @@ configurable `data/pricing.json`, loaded from a path itself set via `PRICING_FIL
 - `assert_known_model` treating an entirely-missing provider table the same as a
   missing-model-within-a-table: would make the newly-added OpenAI provider unusable, since
   it has no pricing table at all today.
+
+---
+
+**Extended by [0008](0008-stage6-tool-use-agent-loop.md):** `llm.py` gains a second call
+path, `complete_turn()` (plus `ToolCall`/`AgentTurn`/`append_assistant_turn()`/
+`append_tool_result()`), for multi-turn, multi-tool, auto-tool-choice conversations -
+`complete()` and its single-forced-tool behavior are unchanged. The exception-translation
+logic common to both paths was factored into shared `_call_anthropic`/`_call_openai` helpers.

@@ -1,10 +1,12 @@
 from contextlib import asynccontextmanager
-from typing import Literal
+from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from copilot import embeddings, llm
+from copilot.agent import AgentMaxTurnsExceeded, AgentTurnIncomplete
+from copilot.agent import triage as agent_triage
 from copilot.classifier import train
 from copilot.incidents import load_incidents
 from copilot.triage import IncompleteResponse, ModelRefused, triage
@@ -56,6 +58,25 @@ class TriageResponse(BaseModel):
     similar_incidents: list[SimilarIncident]
 
 
+class AgentToolCall(BaseModel):
+    tool: str
+    input: dict
+    # Genuinely heterogeneous by tool: dict (classify_incident), list[dict] (search_similar_
+    # incidents), or the string "FINISHED" (record_triage_findings) - see copilot.agent.triage().
+    result: Any
+
+
+class AgentTriageResponse(BaseModel):
+    # None unless the model chose to call classify_incident - unlike TriageResponse's
+    # category/team, which are always present.
+    category: str | None
+    team: str | None
+    root_causes: list[RootCause]
+    next_steps: list[str]
+    similar_incidents: list[SimilarIncident]
+    tool_calls: list[AgentToolCall]
+
+
 @app.post("/triage", response_model=TriageResponse)
 def triage_endpoint(body: TriageRequest, request: Request) -> TriageResponse:
     try:
@@ -95,3 +116,48 @@ def triage_endpoint(body: TriageRequest, request: Request) -> TriageResponse:
             502, f"LLM response incomplete (stop_reason={exc.stop_reason})."
         ) from exc
     return TriageResponse(**result)
+
+
+@app.post("/triage/agent", response_model=AgentTriageResponse)
+def triage_agent_endpoint(body: TriageRequest, request: Request) -> AgentTriageResponse:
+    try:
+        result = agent_triage(
+            body.error_text, request.app.state.classifier_models, effort=body.effort
+        )
+    except ValueError as exc:
+        raise HTTPException(500, f"server misconfigured: {exc}") from exc
+    except llm.LLMAuthenticationError as exc:
+        raise HTTPException(
+            500, "the LLM provider rejected the API key. Check LLM_API_KEY."
+        ) from exc
+    except llm.LLMRateLimitError as exc:
+        raise HTTPException(429, "rate limited by the LLM provider. Try again shortly.") from exc
+    except llm.LLMConnectionError as exc:
+        raise HTTPException(503, "could not reach the LLM provider.") from exc
+    except llm.LLMAPIStatusError as exc:
+        raise HTTPException(502, f"LLM provider API returned {exc.status_code}: {exc}") from exc
+    except llm.LLMMalformedToolCallError as exc:
+        raise HTTPException(502, "the LLM provider returned a malformed tool call.") from exc
+    except embeddings.EmbeddingAuthenticationError as exc:
+        raise HTTPException(
+            500, "the embedding provider rejected the API key. Check EMBEDDING_API_KEY."
+        ) from exc
+    except embeddings.EmbeddingRateLimitError as exc:
+        raise HTTPException(
+            429, "rate limited by the embedding provider. Try again shortly."
+        ) from exc
+    except embeddings.EmbeddingConnectionError as exc:
+        raise HTTPException(503, "could not reach the embedding provider.") from exc
+    except embeddings.EmbeddingAPIStatusError as exc:
+        raise HTTPException(
+            502, f"embedding provider API returned {exc.status_code}: {exc}"
+        ) from exc
+    except ModelRefused as exc:
+        raise HTTPException(422, "the model declined to triage this input.") from exc
+    except AgentTurnIncomplete as exc:
+        raise HTTPException(
+            502, f"agent turn incomplete (stop_reason={exc.stop_reason})."
+        ) from exc
+    except AgentMaxTurnsExceeded as exc:
+        raise HTTPException(500, str(exc)) from exc
+    return AgentTriageResponse(**result)

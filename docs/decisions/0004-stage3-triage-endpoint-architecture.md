@@ -57,3 +57,9 @@ function, `copilot.triage.triage()`.
 `copilot.llm.complete()` instead of `anthropic.Anthropic()` directly, and `/triage`'s
 exception-to-HTTP mapping catches normalized `llm.LLM*Error` types instead of `anthropic.*`
 exceptions (same status codes).
+
+**Extended by [0008](0008-stage6-tool-use-agent-loop.md):** `TRIAGE_TOOL` and `ModelRefused`
+are reused directly (imported, not duplicated) by `copilot.agent`'s tool-use loop as its
+finish tool and refusal signal. `/triage` itself and `TriageResponse` are untouched - Stage 6
+ships as a separate `POST /triage/agent` endpoint with its own, more permissive response
+shape (nullable `category`/`team`), not a change to this one.
