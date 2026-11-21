@@ -88,13 +88,22 @@ def test_resolve_model_different_provider_without_model_raises(monkeypatch):
 
 
 def _fake_anthropic_response(
-    *, stop_reason="end_turn", text: str | None = "hello", tool_input=None, input_tokens=10, output_tokens=5
+    *,
+    stop_reason="end_turn",
+    text: str | None = "hello",
+    tool_input=None,
+    tool_id="toolu_1",
+    tool_name="record_findings",
+    input_tokens=10,
+    output_tokens=5,
 ):
     content = []
     if text is not None:
         content.append(types.SimpleNamespace(type="text", text=text))
     if tool_input is not None:
-        content.append(types.SimpleNamespace(type="tool_use", input=tool_input))
+        content.append(
+            types.SimpleNamespace(type="tool_use", id=tool_id, name=tool_name, input=tool_input)
+        )
     return types.SimpleNamespace(
         stop_reason=stop_reason,
         content=content,
@@ -195,6 +204,8 @@ def _fake_openai_response(
     *,
     content: str | None = "hello",
     tool_arguments=None,
+    tool_call_id="call_1",
+    tool_name="record_findings",
     refusal=None,
     finish_reason="stop",
     prompt_tokens=10,
@@ -202,8 +213,8 @@ def _fake_openai_response(
 ):
     tool_calls = None
     if tool_arguments is not None:
-        function = types.SimpleNamespace(name="record_findings", arguments=tool_arguments)
-        tool_calls = [types.SimpleNamespace(function=function)]
+        function = types.SimpleNamespace(name=tool_name, arguments=tool_arguments)
+        tool_calls = [types.SimpleNamespace(id=tool_call_id, function=function)]
     message = types.SimpleNamespace(content=content, refusal=refusal, tool_calls=tool_calls)
     choice = types.SimpleNamespace(message=message, finish_reason=finish_reason)
     return types.SimpleNamespace(
@@ -303,3 +314,180 @@ def test_openai_connection_error_wrapped(monkeypatch):
     _install_fake_openai(monkeypatch, exc=openai.APIConnectionError(request=request))
     with pytest.raises(llm.LLMConnectionError):
         llm.complete("sys", "user", "gpt-test")
+
+
+# --- complete_turn() / multi-turn agent conversation -------------------------
+
+OTHER_TOOL = ToolSpec(
+    name="other_tool",
+    description="Another tool.",
+    schema={"type": "object", "properties": {}},
+)
+
+
+def test_complete_turn_anthropic_text_only(monkeypatch):
+    _install_fake_anthropic(monkeypatch, response=_fake_anthropic_response(text="hi there"))
+    turn = llm.complete_turn("sys", [{"role": "user", "content": "hi"}], "claude-haiku-5-5", [TOOL])
+    assert turn.text == "hi there"
+    assert turn.tool_call is None
+    assert not turn.refused
+    assert not turn.truncated
+
+
+def test_complete_turn_anthropic_tool_call_parsed(monkeypatch):
+    _install_fake_anthropic(
+        monkeypatch,
+        response=_fake_anthropic_response(
+            text=None, tool_input={"x": "y"}, tool_id="toolu_42", tool_name="record_findings",
+            stop_reason="tool_use",
+        ),
+    )
+    turn = llm.complete_turn("sys", [{"role": "user", "content": "hi"}], "claude-haiku-5-5", [TOOL])
+    assert turn.tool_call == llm.ToolCall(id="toolu_42", name="record_findings", input={"x": "y"})
+    assert turn.provider_message["role"] == "assistant"
+
+
+def test_complete_turn_anthropic_sends_auto_choice_disabled_parallel_and_all_tools(monkeypatch):
+    captured = {}
+
+    class _CapturingMessages:
+        def create(self, **kwargs):
+            captured.update(kwargs)
+            return _fake_anthropic_response(text="ok")
+
+    monkeypatch.setattr(llm.settings, "llm_provider", "anthropic")
+    monkeypatch.setattr(
+        llm, "_get_anthropic_client", lambda: _FakeAnthropicClient(_CapturingMessages())
+    )
+
+    messages = [{"role": "user", "content": "hi"}]
+    llm.complete_turn("sys", messages, "claude-haiku-5-5", [TOOL, OTHER_TOOL])
+
+    assert captured["tool_choice"] == {"type": "auto", "disable_parallel_tool_use": True}
+    assert captured["messages"] is messages
+    assert [t["name"] for t in captured["tools"]] == ["record_findings", "other_tool"]
+
+
+def test_complete_turn_anthropic_refusal(monkeypatch):
+    _install_fake_anthropic(
+        monkeypatch, response=_fake_anthropic_response(stop_reason="refusal", text=None)
+    )
+    turn = llm.complete_turn("sys", [{"role": "user", "content": "hi"}], "claude-haiku-5-5", [TOOL])
+    assert turn.refused
+
+
+def test_complete_turn_anthropic_truncated(monkeypatch):
+    _install_fake_anthropic(monkeypatch, response=_fake_anthropic_response(stop_reason="max_tokens"))
+    turn = llm.complete_turn("sys", [{"role": "user", "content": "hi"}], "claude-haiku-5-5", [TOOL])
+    assert turn.truncated
+
+
+def test_append_assistant_turn_anthropic_appends_provider_message():
+    turn = llm.AgentTurn(
+        text="hi", tool_call=None, refused=False, truncated=False,
+        input_tokens=1, output_tokens=1, stop_reason="end_turn",
+        provider_message={"role": "assistant", "content": [{"type": "text", "text": "hi"}]},
+    )
+    messages = [{"role": "user", "content": "hello"}]
+    llm.append_assistant_turn(messages, turn)
+    assert messages[-1] == turn.provider_message
+
+
+def test_append_tool_result_anthropic_shape(monkeypatch):
+    monkeypatch.setattr(llm.settings, "llm_provider", "anthropic")
+    turn = llm.AgentTurn(
+        text=None, tool_call=llm.ToolCall(id="toolu_1", name="search", input={}),
+        refused=False, truncated=False, input_tokens=1, output_tokens=1,
+        stop_reason="tool_use", provider_message={"role": "assistant", "content": []},
+    )
+    messages: list[dict] = []
+    llm.append_tool_result(messages, turn, {"found": 1}, is_error=False)
+    assert messages == [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "toolu_1",
+                    "content": '{"found": 1}',
+                    "is_error": False,
+                }
+            ],
+        }
+    ]
+
+
+def test_complete_turn_openai_text_only(monkeypatch):
+    _install_fake_openai(monkeypatch, response=_fake_openai_response(content="hi there"))
+    turn = llm.complete_turn("sys", [{"role": "user", "content": "hi"}], "gpt-test", [TOOL])
+    assert turn.text == "hi there"
+    assert turn.tool_call is None
+
+
+def test_complete_turn_openai_tool_call_parsed(monkeypatch):
+    _install_fake_openai(
+        monkeypatch,
+        response=_fake_openai_response(
+            content=None, tool_arguments='{"x": "y"}', tool_call_id="call_42",
+            tool_name="record_findings", finish_reason="tool_calls",
+        ),
+    )
+    turn = llm.complete_turn("sys", [{"role": "user", "content": "hi"}], "gpt-test", [TOOL])
+    assert turn.tool_call == llm.ToolCall(id="call_42", name="record_findings", input={"x": "y"})
+    assert turn.provider_message["tool_calls"][0]["id"] == "call_42"
+
+
+def test_complete_turn_openai_malformed_tool_call_raises(monkeypatch):
+    _install_fake_openai(
+        monkeypatch,
+        response=_fake_openai_response(content=None, tool_arguments="not json", finish_reason="tool_calls"),
+    )
+    with pytest.raises(llm.LLMMalformedToolCallError):
+        llm.complete_turn("sys", [{"role": "user", "content": "hi"}], "gpt-test", [TOOL])
+
+
+def test_complete_turn_openai_sends_auto_choice_and_disables_parallel(monkeypatch):
+    captured = {}
+
+    class _CapturingCompletions:
+        def create(self, **kwargs):
+            captured.update(kwargs)
+            return _fake_openai_response(content="ok")
+
+    monkeypatch.setattr(llm.settings, "llm_provider", "openai")
+    monkeypatch.setattr(
+        llm, "_get_openai_client", lambda: _FakeOpenAIClient(_CapturingCompletions())
+    )
+
+    messages = [{"role": "user", "content": "hi"}]
+    llm.complete_turn("sys", messages, "gpt-test", [TOOL, OTHER_TOOL])
+
+    assert captured["tool_choice"] == "auto"
+    assert captured["parallel_tool_calls"] is False
+    assert captured["messages"][0] == {"role": "system", "content": "sys"}
+    assert captured["messages"][1:] == messages
+    assert [t["function"]["name"] for t in captured["tools"]] == ["record_findings", "other_tool"]
+
+
+def test_complete_turn_openai_refusal(monkeypatch):
+    _install_fake_openai(monkeypatch, response=_fake_openai_response(refusal="no"))
+    turn = llm.complete_turn("sys", [{"role": "user", "content": "hi"}], "gpt-test", [TOOL])
+    assert turn.refused
+
+
+def test_complete_turn_openai_truncated(monkeypatch):
+    _install_fake_openai(monkeypatch, response=_fake_openai_response(finish_reason="length"))
+    turn = llm.complete_turn("sys", [{"role": "user", "content": "hi"}], "gpt-test", [TOOL])
+    assert turn.truncated
+
+
+def test_append_tool_result_openai_shape(monkeypatch):
+    monkeypatch.setattr(llm.settings, "llm_provider", "openai")
+    turn = llm.AgentTurn(
+        text=None, tool_call=llm.ToolCall(id="call_1", name="search", input={}),
+        refused=False, truncated=False, input_tokens=1, output_tokens=1,
+        stop_reason="tool_calls", provider_message={"role": "assistant", "content": None, "tool_calls": []},
+    )
+    messages: list[dict] = []
+    llm.append_tool_result(messages, turn, {"found": 1})
+    assert messages == [{"role": "tool", "tool_call_id": "call_1", "content": '{"found": 1}'}]

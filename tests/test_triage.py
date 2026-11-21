@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from copilot import api, llm, triage
+from copilot import agent, api, llm, triage
 from copilot.classifier import train
 from copilot.triage import IncompleteResponse, ModelRefused
 
@@ -335,3 +335,76 @@ def test_endpoint_incomplete_response_returns_502(monkeypatch):
         response = client.post("/triage", json={"error_text": "boom"})
 
     assert response.status_code == 502
+
+
+# --- FastAPI-level tests through /triage/agent ------------------------------
+
+
+def _agent_turn(tool_name=None, tool_input=None, **overrides):
+    tool_call = llm.ToolCall(id="t1", name=tool_name, input=tool_input or {}) if tool_name else None
+    defaults = {
+        "text": None,
+        "refused": False,
+        "truncated": False,
+        "input_tokens": 10,
+        "output_tokens": 5,
+        "stop_reason": "tool_use",
+        "provider_message": {"role": "assistant", "content": ""},
+    }
+    return llm.AgentTurn(tool_call=tool_call, **{**defaults, **overrides})
+
+
+def _install_fake_complete_turn(monkeypatch, turns):
+    turns_iter = iter(turns)
+    monkeypatch.setattr(agent.llm, "complete_turn", lambda *a, **k: next(turns_iter))
+
+
+def test_agent_endpoint_happy_path(monkeypatch):
+    _install_fake_complete_turn(
+        monkeypatch,
+        [_agent_turn("classify_incident", {}), _agent_turn("record_triage_findings", TOOL_INPUT)],
+    )
+
+    with TestClient(api.app) as client:
+        response = client.post("/triage/agent", json={"error_text": "deadlock on database table"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["category"] == "database"
+    assert body["team"] == "database-eng"
+    assert body["root_causes"] == TOOL_INPUT["root_causes"]
+    assert body["next_steps"] == TOOL_INPUT["next_steps"]
+    assert [c["tool"] for c in body["tool_calls"]] == ["classify_incident", "record_triage_findings"]
+
+
+def test_agent_endpoint_category_team_null_when_classify_not_called(monkeypatch):
+    _install_fake_complete_turn(monkeypatch, [_agent_turn("record_triage_findings", TOOL_INPUT)])
+
+    with TestClient(api.app) as client:
+        response = client.post("/triage/agent", json={"error_text": "boom"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["category"] is None
+    assert body["team"] is None
+
+
+def test_agent_endpoint_turn_incomplete_returns_502(monkeypatch):
+    _install_fake_complete_turn(
+        monkeypatch,
+        [_agent_turn("record_triage_findings", {"root_causes": TOOL_INPUT["root_causes"]})],
+    )
+
+    with TestClient(api.app) as client:
+        response = client.post("/triage/agent", json={"error_text": "boom"})
+
+    assert response.status_code == 502
+
+
+def test_agent_endpoint_max_turns_exceeded_returns_500(monkeypatch):
+    _install_fake_complete_turn(monkeypatch, [_agent_turn(text="stalling") for _ in range(8)])
+
+    with TestClient(api.app) as client:
+        response = client.post("/triage/agent", json={"error_text": "boom"})
+
+    assert response.status_code == 500

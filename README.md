@@ -8,13 +8,13 @@ Built stage by stage as a hands-on way to learn AI engineering. All data is synt
 
 | Stage | Topic | Status |
 | --- | --- | --- |
-| 1 | How LLMs work, first API call | started |
-| 2 | Classic ML baseline classifier | started |
-| 3 | Prompting and structured output (`POST /triage`) | started |
-| 4 | Embeddings and retrieval (RAG) with pgvector | started |
-| 5 | Evaluation, run in CI | started |
-| 6 | Tools and agents | |
-| 7 | Production readiness: redaction, guardrails, cost | |
+| 1 | How LLMs work, first API call | Done |
+| 2 | Classic ML baseline classifier | Done |
+| 3 | Prompting and structured output (`POST /triage`) | Done |
+| 4 | Embeddings and retrieval (RAG) with pgvector | Done |
+| 5 | Evaluation, run in CI | Done |
+| 6 | Tools and agents | In Progress |
+| 7 | Production readiness: redaction, guardrails, cost | TO-DO |
 
 Decisions are recorded in [docs/decisions](docs/decisions).
 
@@ -105,4 +105,33 @@ LLM calls per case and is manual/opt-in, like Stage 1/3's real-API checks.
 
 ```bash
 uv run --env-file .env python stages/05_run_eval.py
+```
+
+## Stage 6
+
+An actual agent loop, not a fixed pipeline: the model is offered three tools -
+`classify_incident`, `search_similar_incidents`, `record_triage_findings` - with free
+choice, and decides itself which to call, in what order, how many times, until it calls
+`record_triage_findings` to finish. See decision
+[0008](docs/decisions/0008-stage6-tool-use-agent-loop.md). Unlike `/triage`,
+`category`/`team` and retrieval usage are no longer guaranteed - they only happen if the
+model chooses to call the corresponding tool. The CLI prints the tool-call trace before the
+final answer, since watching what the model decided to do is the point of this stage.
+
+```bash
+uv run --env-file .env python stages/06_agent_triage.py "ERROR PaymentGateway: timeout calling StripeAPI charge endpoint"
+
+# give the agent a smaller turn budget, or more room to explore
+uv run --env-file .env python stages/06_agent_triage.py --max-turns 4 "..."
+```
+
+`POST /triage/agent` (same request body as `/triage`) exposes the same loop over HTTP, with
+`category`/`team` nullable and a `tool_calls` field showing the trace:
+
+```bash
+uv run uvicorn copilot.api:app --reload
+
+curl -X POST http://localhost:8000/triage/agent \
+  -H "Content-Type: application/json" \
+  -d '{"error_text": "ERROR PaymentGateway: timeout calling StripeAPI charge endpoint"}'
 ```
