@@ -4,6 +4,18 @@ An AI assistant that helps on-call engineers triage production incidents. Paste 
 
 Built stage by stage as a hands-on way to learn AI engineering. All data is synthetic.
 
+## Architecture
+
+![Incident Copilot architecture](docs/architecture.svg)
+
+Two request paths share the same core. `POST /triage` (Stage 3) runs a fixed
+classify → retrieve → LLM pipeline, every call in the same order. `POST /triage/agent`
+(Stage 6) lets the model freely choose which of three tools to call, in what order, across
+multiple turns. Both land on the same classifier, retrieval and LLM modules underneath,
+which in turn talk to the external providers. Stage 5's eval harness scores real `triage()`
+output against a golden set offline - it's not part of either request path. Current as of
+Stage 6; Stage 7 (redaction, guardrails, cost) isn't reflected yet.
+
 ## Stages
 
 | Stage | Topic | Status |

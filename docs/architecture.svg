@@ -1,0 +1,213 @@
+<svg viewBox="0 0 1500 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Incident Copilot architecture: CLI entry points and two HTTP request paths, POST /triage running a fixed classify-retrieve-LLM pipeline and POST /triage/agent running a free-choice tool loop, both built on shared classifier, retrieval, LLM and cost modules talking to external providers, with Stage 5's offline eval harness scoring triage output separately from the request path.">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b6459"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1500" height="900" rx="18" fill="#f7f6f3"/>
+
+  <!-- ===== Data row ===== -->
+  <g>
+    <rect x="140" y="30" width="220" height="50" rx="8" fill="#eceae5" stroke="#c7c2b5"/>
+    <text x="250" y="50" text-anchor="middle" font-family="Inter,sans-serif" font-size="12.5" font-weight="600" fill="#3d3625">data/incidents/</text>
+    <text x="250" y="66" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#6b6459">50 synthetic cases</text>
+  </g>
+  <g>
+    <rect x="1280" y="30" width="200" height="50" rx="8" fill="#f1e4ee" stroke="#c48fb0"/>
+    <text x="1380" y="50" text-anchor="middle" font-family="Inter,sans-serif" font-size="12.5" font-weight="600" fill="#54234a">data/evals/</text>
+    <text x="1380" y="66" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#8a4f7c">15 golden cases</text>
+  </g>
+
+  <!-- ===== CLI entry points ===== -->
+  <g font-family="Inter,sans-serif">
+    <rect x="70" y="100" width="200" height="48" rx="7" fill="#eceae5" stroke="#c7c2b5"/>
+    <text x="170" y="120" text-anchor="middle" font-size="11" font-weight="600" fill="#3d3625">01_first_call.py</text>
+    <text x="170" y="135" text-anchor="middle" font-size="10" fill="#6b6459">→ llm.py</text>
+
+    <rect x="315" y="100" width="200" height="48" rx="7" fill="#eceae5" stroke="#c7c2b5"/>
+    <text x="415" y="120" text-anchor="middle" font-size="11" font-weight="600" fill="#3d3625">02_classify_incident.py</text>
+    <text x="415" y="135" text-anchor="middle" font-size="10" fill="#6b6459">→ classifier.py</text>
+
+    <rect x="560" y="100" width="200" height="48" rx="7" fill="#eceae5" stroke="#c7c2b5"/>
+    <text x="660" y="120" text-anchor="middle" font-size="11" font-weight="600" fill="#3d3625">04_embed_and_retrieve.py</text>
+    <text x="660" y="135" text-anchor="middle" font-size="10" fill="#6b6459">→ retrieval.py</text>
+
+    <rect x="805" y="100" width="200" height="48" rx="7" fill="#eceae5" stroke="#c7c2b5"/>
+    <text x="905" y="120" text-anchor="middle" font-size="11" font-weight="600" fill="#3d3625">05_run_eval.py</text>
+    <text x="905" y="135" text-anchor="middle" font-size="10" fill="#6b6459">→ eval_harness.py</text>
+
+    <rect x="1050" y="100" width="200" height="48" rx="7" fill="#eceae5" stroke="#c7c2b5"/>
+    <text x="1150" y="120" text-anchor="middle" font-size="11" font-weight="600" fill="#3d3625">06_agent_triage.py</text>
+    <text x="1150" y="135" text-anchor="middle" font-size="10" fill="#6b6459">→ agent.py</text>
+  </g>
+
+  <!-- ===== Client ===== -->
+  <g>
+    <rect x="545" y="178" width="240" height="46" rx="8" fill="#eceae5" stroke="#c7c2b5"/>
+    <text x="665" y="197" text-anchor="middle" font-family="Inter,sans-serif" font-size="12.5" font-weight="600" fill="#3d3625">Client</text>
+    <text x="665" y="212" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#6b6459">curl / direct HTTP</text>
+  </g>
+
+  <!-- ===== API row ===== -->
+  <g>
+    <rect x="150" y="257" width="460" height="72" rx="8" fill="#fcecd9" stroke="#e0a855"/>
+    <text x="380" y="279" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" font-weight="600" fill="#6b3d0f">POST /triage</text>
+    <text x="380" y="296" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9.5" fill="#8a5a1f">{error_text, effort?}</text>
+    <text x="380" y="310" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9.5" fill="#8a5a1f">→ category, team, root_causes, next_steps, similar_incidents</text>
+  </g>
+  <g>
+    <rect x="730" y="257" width="460" height="72" rx="8" fill="#fcecd9" stroke="#e0a855"/>
+    <text x="960" y="279" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" font-weight="600" fill="#6b3d0f">POST /triage/agent</text>
+    <text x="960" y="296" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9.5" fill="#8a5a1f">{error_text, effort?}</text>
+    <text x="960" y="310" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9.5" fill="#8a5a1f">→ category?, team?, root_causes, next_steps, similar_incidents, tool_calls</text>
+  </g>
+
+  <!-- ===== Lane A: fixed pipeline ===== -->
+  <g>
+    <rect x="60" y="355" width="560" height="270" rx="12" fill="none" stroke="#7fa8cc" stroke-width="1.5"/>
+    <text x="340" y="377" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="12.5" font-weight="600" fill="#1c3a52">triage.py — fixed pipeline · Stage 3</text>
+
+    <rect x="110" y="395" width="460" height="50" rx="8" fill="#dbe9f6" stroke="#7fa8cc"/>
+    <text x="340" y="416" text-anchor="middle" font-family="Inter,sans-serif" font-size="12.5" font-weight="600" fill="#1c3a52">① classify</text>
+    <text x="340" y="431" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#3f6687">always runs — predict(classifier_models, error_text)</text>
+
+    <rect x="110" y="475" width="460" height="50" rx="8" fill="#dbe9f6" stroke="#7fa8cc"/>
+    <text x="340" y="496" text-anchor="middle" font-family="Inter,sans-serif" font-size="12.5" font-weight="600" fill="#1c3a52">② retrieve similar incidents</text>
+    <text x="340" y="511" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#3f6687">only if EMBEDDING_PROVIDER is set</text>
+
+    <rect x="110" y="555" width="460" height="50" rx="8" fill="#dbe9f6" stroke="#7fa8cc"/>
+    <text x="340" y="576" text-anchor="middle" font-family="Inter,sans-serif" font-size="12.5" font-weight="600" fill="#1c3a52">③ one forced LLM call</text>
+    <text x="340" y="591" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#3f6687">tool_choice: record_triage_findings</text>
+
+    <line x1="340" y1="445" x2="340" y2="473" stroke="#7fa8cc" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <line x1="340" y1="525" x2="340" y2="553" stroke="#7fa8cc" stroke-width="1.5" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- ===== Lane B: agent loop ===== -->
+  <g>
+    <rect x="660" y="355" width="600" height="270" rx="12" fill="none" stroke="#6fb896" stroke-width="1.5"/>
+    <text x="960" y="377" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="12.5" font-weight="600" fill="#1a4733">agent.py — free-choice loop · Stage 6</text>
+
+    <rect x="720" y="402" width="480" height="56" rx="8" fill="#dcf0e6" stroke="#6fb896"/>
+    <text x="960" y="426" text-anchor="middle" font-family="Inter,sans-serif" font-size="12.5" font-weight="600" fill="#1a4733">model chooses freely</text>
+    <text x="960" y="441" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#3a7a5c">complete_turn() · tool_choice=auto · up to 8 turns</text>
+
+    <rect x="720" y="515" width="480" height="70" rx="8" fill="#dcf0e6" stroke="#6fb896"/>
+    <text x="960" y="536" text-anchor="middle" font-family="Inter,sans-serif" font-size="11.5" font-weight="600" fill="#1a4733">classify_incident() · search_similar_incidents(query, k)</text>
+    <text x="960" y="552" text-anchor="middle" font-family="Inter,sans-serif" font-size="11.5" font-weight="600" fill="#1a4733">record_triage_findings(root_causes, next_steps) → finishes</text>
+    <text x="960" y="570" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#3a7a5c">model picks which, how many, in what order</text>
+
+    <line x1="960" y1="458" x2="960" y2="513" stroke="#6fb896" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <path d="M1200,540 C1248,540 1248,430 1200,430" fill="none" stroke="#6fb896" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+    <text x="1253" y="487" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#3a7a5c" transform="rotate(90 1253 487)">loop</text>
+  </g>
+
+  <!-- ===== Shared core ===== -->
+  <g>
+    <rect x="60" y="665" width="220" height="70" rx="8" fill="#efeae2" stroke="#b8ad96"/>
+    <text x="170" y="688" text-anchor="middle" font-family="Inter,sans-serif" font-size="12.5" font-weight="600" fill="#3d3625">classifier.py</text>
+    <text x="170" y="705" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#6b6459">train() / predict()</text>
+    <text x="170" y="720" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#6b6459">classic ML, 5-fold CV</text>
+  </g>
+  <g>
+    <rect x="353" y="665" width="280" height="70" rx="8" fill="#efeae2" stroke="#b8ad96"/>
+    <text x="493" y="688" text-anchor="middle" font-family="Inter,sans-serif" font-size="12.5" font-weight="600" fill="#3d3625">retrieval.py + store.py</text>
+    <text x="493" y="705" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#6b6459">embed_and_store() · retrieve_similar()</text>
+    <text x="493" y="720" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#6b6459">psycopg + pgvector</text>
+  </g>
+  <g>
+    <rect x="706" y="665" width="280" height="70" rx="8" fill="#efeae2" stroke="#b8ad96"/>
+    <text x="846" y="688" text-anchor="middle" font-family="Inter,sans-serif" font-size="12.5" font-weight="600" fill="#3d3625">llm.py</text>
+    <text x="846" y="705" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#6b6459">complete() · complete_turn()</text>
+    <text x="846" y="720" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#6b6459">_call_anthropic / _call_openai</text>
+  </g>
+  <g>
+    <rect x="1059" y="665" width="200" height="70" rx="8" fill="#efeae2" stroke="#b8ad96"/>
+    <text x="1159" y="688" text-anchor="middle" font-family="Inter,sans-serif" font-size="12.5" font-weight="600" fill="#3d3625">cost.py</text>
+    <text x="1159" y="705" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#6b6459">estimate_cost()</text>
+    <text x="1159" y="720" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#6b6459">reads data/pricing.json</text>
+  </g>
+  <line x1="986" y1="700" x2="1057" y2="700" stroke="#b8ad96" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+  <!-- ===== External services ===== -->
+  <g>
+    <rect x="300" y="765" width="260" height="56" rx="8" fill="#e7e5e2" stroke="#a8a296"/>
+    <text x="430" y="788" text-anchor="middle" font-family="Inter,sans-serif" font-size="12.5" font-weight="600" fill="#3d3625">Embedding provider</text>
+    <text x="430" y="804" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#6b6459">Voyage AI · Google AI Studio</text>
+  </g>
+  <g>
+    <rect x="580" y="765" width="220" height="56" rx="8" fill="#e7e5e2" stroke="#a8a296"/>
+    <text x="690" y="788" text-anchor="middle" font-family="Inter,sans-serif" font-size="12.5" font-weight="600" fill="#3d3625">Postgres</text>
+    <text x="690" y="804" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#6b6459">+ pgvector</text>
+  </g>
+  <g>
+    <rect x="810" y="765" width="260" height="56" rx="8" fill="#e7e5e2" stroke="#a8a296"/>
+    <text x="940" y="788" text-anchor="middle" font-family="Inter,sans-serif" font-size="12.5" font-weight="600" fill="#3d3625">LLM provider</text>
+    <text x="940" y="804" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#6b6459">Anthropic · OpenAI-compatible</text>
+  </g>
+  <g>
+    <rect x="1090" y="765" width="200" height="56" rx="8" fill="#e7e5e2" stroke="#a8a296" stroke-dasharray="5 3"/>
+    <text x="1190" y="788" text-anchor="middle" font-family="Inter,sans-serif" font-size="12.5" font-weight="600" fill="#6b6459">Redis</text>
+    <text x="1190" y="804" text-anchor="middle" font-family="Inter,sans-serif" font-size="10.5" fill="#8a8477">reserved · Stage 7</text>
+  </g>
+
+  <!-- ===== Offline eval strip ===== -->
+  <g>
+    <rect x="1280" y="355" width="160" height="466" rx="12" fill="#f1e4ee" stroke="#c48fb0" stroke-width="1.5"/>
+    <text x="1360" y="379" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="11.5" font-weight="600" fill="#54234a">Stage 5</text>
+    <text x="1360" y="395" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#8a4f7c">offline eval —</text>
+    <text x="1360" y="408" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#8a4f7c">not in request path</text>
+    <line x1="1300" y1="423" x2="1420" y2="423" stroke="#c48fb0" stroke-width="1"/>
+    <text x="1360" y="450" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#54234a">load_eval_cases()</text>
+    <text x="1360" y="485" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#54234a">run_eval()</text>
+    <text x="1360" y="520" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#54234a">judge_root_cause()</text>
+    <text x="1360" y="536" text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" fill="#8a4f7c">(LLM-as-judge)</text>
+    <text x="1360" y="566" text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" fill="#8a4f7c">scores real triage()</text>
+    <text x="1360" y="579" text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" fill="#8a4f7c">output, two metrics:</text>
+    <text x="1360" y="592" text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" fill="#8a4f7c">exact-match + judge score</text>
+  </g>
+
+  <!-- ===== Arrows: client -> API ===== -->
+  <line x1="600" y1="224" x2="400" y2="255" stroke="#6b6459" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="730" y1="224" x2="940" y2="255" stroke="#6b6459" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ===== Arrows: API -> lanes ===== -->
+  <line x1="380" y1="329" x2="380" y2="353" stroke="#6b6459" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="960" y1="329" x2="960" y2="353" stroke="#6b6459" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ===== Arrows: data -> core / offline ===== -->
+  <polyline points="250,80 250,96 20,96 20,645 170,645 170,663" fill="none" stroke="#6b6459" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+  <line x1="1380" y1="80" x2="1380" y2="353" stroke="#6b6459" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+
+  <!-- ===== Arrows: Lane A (solid, deterministic) -> core ===== -->
+  <line x1="180" y1="625" x2="170" y2="663" stroke="#7fa8cc" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <line x1="340" y1="625" x2="493" y2="663" stroke="#7fa8cc" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <line x1="500" y1="625" x2="846" y2="663" stroke="#7fa8cc" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+  <!-- ===== Arrows: Lane B -> core (dashed = model-chosen, solid = every turn) ===== -->
+  <line x1="820" y1="625" x2="200" y2="663" stroke="#6fb896" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+  <line x1="960" y1="625" x2="520" y2="663" stroke="#6fb896" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+  <line x1="1100" y1="625" x2="880" y2="663" stroke="#6fb896" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+  <!-- ===== Arrows: core -> external ===== -->
+  <line x1="450" y1="735" x2="450" y2="763" stroke="#6b6459" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <line x1="560" y1="735" x2="660" y2="763" stroke="#6b6459" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <line x1="900" y1="735" x2="920" y2="763" stroke="#6b6459" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+  <!-- ===== Arrows: offline eval relationships ===== -->
+  <polyline points="1280,480 600,480 600,627" fill="none" stroke="#c48fb0" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+  <text x="940" y="473" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#8a4f7c">calls triage() directly</text>
+  <polyline points="1280,745 846,745 846,733" fill="none" stroke="#c48fb0" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+  <text x="1030" y="757" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#8a4f7c">judge call</text>
+
+  <!-- ===== Legend ===== -->
+  <g font-family="Inter,sans-serif" font-size="11" fill="#6b6459">
+    <line x1="60" y1="858" x2="95" y2="858" stroke="#6b6459" stroke-width="1.5"/>
+    <text x="102" y="862">deterministic call</text>
+    <line x1="260" y1="858" x2="295" y2="858" stroke="#6b6459" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="302" y="862">model-chosen / offline relationship</text>
+    <rect x="620" y="849" width="16" height="16" rx="3" fill="none" stroke="#a8a296" stroke-dasharray="5 3"/>
+    <text x="644" y="862">provisioned, not yet used</text>
+  </g>
+</svg>
