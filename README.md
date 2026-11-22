@@ -25,7 +25,7 @@ Stage 6; Stage 7 (redaction, guardrails, cost) isn't reflected yet.
 | 3 | Prompting and structured output (`POST /triage`) | Done |
 | 4 | Embeddings and retrieval (RAG) with pgvector | Done |
 | 5 | Evaluation, run in CI | Done |
-| 6 | Tools and agents | In Progress |
+| 6 | Tools and agents | Done |
 | 7 | Production readiness: redaction, guardrails, cost | TO-DO |
 
 Decisions are recorded in [docs/decisions](docs/decisions).
