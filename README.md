@@ -208,9 +208,9 @@ curl -X POST http://localhost:8000/triage/agent \
   -d '{"error_text": "ERROR PaymentGateway: timeout calling StripeAPI charge endpoint"}'
 ```
 
-Example response - this run, the model also chose to search for similar incidents (`similar_incidents`
-and `tool_calls` trimmed below for length; the full shapes are in the CLI example above and in
-`copilot.agent.triage()`):
+Example response - this run, the model also chose to search for similar incidents, with `k: 5`
+(`tool_calls` repeats `root_causes`/`next_steps`/the search results verbatim, since that field is
+exactly what the model saw at each step - see `copilot.agent.triage()`):
 
 ```json
 {
@@ -242,12 +242,34 @@ and `tool_calls` trimmed below for length; the full shapes are in the CLI exampl
   ],
   "similar_incidents": [
     {"id": "inc-039", "error_text": "ERROR payments-gateway: timeout after 30s calling StripeAPI charge endpoint, no response received", "category": "third-party", "team": "payments", "distance": 0.193},
-    {"id": "inc-043", "error_text": "ERROR payments-gateway: StripeAPI webhook retried 5 times, still receiving 503 from our endpoint", "category": "third-party", "team": "payments", "distance": 0.320}
+    {"id": "inc-043", "error_text": "ERROR payments-gateway: StripeAPI webhook retried 5 times, still receiving 503 from our endpoint", "category": "third-party", "team": "payments", "distance": 0.320},
+    {"id": "inc-011", "error_text": "ERROR api-gateway: TLS handshake timeout connecting to billing-service, certificate negotiation failed", "category": "network", "team": "networking", "distance": 0.351},
+    {"id": "inc-041", "error_text": "ERROR payments-gateway: StripeAPI returned 500 Internal Server Error on refund request", "category": "third-party", "team": "payments", "distance": 0.375},
+    {"id": "inc-038", "error_text": "ERROR checkout-service: connection pool exhausted under load, 503s returned to 15 percent of checkout requests", "category": "resource-exhaustion", "team": "platform-infra", "distance": 0.383}
   ],
   "tool_calls": [
     {"tool": "classify_incident", "input": {}, "result": {"category": "third-party", "team": "platform-infra"}},
-    {"tool": "search_similar_incidents", "input": {"query": "timeout calling StripeAPI charge endpoint", "k": 5}, "result": "5 matches (see similar_incidents above)"},
-    {"tool": "record_triage_findings", "input": "(root_causes, next_steps above)", "result": "FINISHED"}
+    {"tool": "search_similar_incidents", "input": {"query": "timeout calling StripeAPI charge endpoint", "k": 5}, "result": [
+      {"id": "inc-039", "error_text": "ERROR payments-gateway: timeout after 30s calling StripeAPI charge endpoint, no response received", "category": "third-party", "team": "payments", "distance": 0.193},
+      {"id": "inc-043", "error_text": "ERROR payments-gateway: StripeAPI webhook retried 5 times, still receiving 503 from our endpoint", "category": "third-party", "team": "payments", "distance": 0.320},
+      {"id": "inc-011", "error_text": "ERROR api-gateway: TLS handshake timeout connecting to billing-service, certificate negotiation failed", "category": "network", "team": "networking", "distance": 0.351},
+      {"id": "inc-041", "error_text": "ERROR payments-gateway: StripeAPI returned 500 Internal Server Error on refund request", "category": "third-party", "team": "payments", "distance": 0.375},
+      {"id": "inc-038", "error_text": "ERROR checkout-service: connection pool exhausted under load, 503s returned to 15 percent of checkout requests", "category": "resource-exhaustion", "team": "platform-infra", "distance": 0.383}
+    ]},
+    {"tool": "record_triage_findings", "input": {
+      "root_causes": [
+        {"cause": "Stripe API experiencing latency or outage causing request timeouts", "confidence": "high", "how_to_confirm": "Check Stripe status page and recent incident logs; correlate timestamps with your timeout events"},
+        {"cause": "Network connectivity issue (e.g., DNS, routing, firewall) between our payment gateway and Stripe", "confidence": "medium", "how_to_confirm": "Run network diagnostics (ping, traceroute, curl) from the payment service host to Stripe endpoints; look for packet loss or high latency"},
+        {"cause": "Our payment service's connection pool exhausted or misconfigured timeout settings", "confidence": "low", "how_to_confirm": "Inspect connection pool metrics and logs for saturation; review timeout and retry configuration for adequacy"}
+      ],
+      "next_steps": [
+        "Check Stripe status page and recent incident reports for any known outages or latency spikes.",
+        "Run network diagnostics (ping, traceroute, curl) from the payment gateway host to Stripe's API endpoints to verify connectivity.",
+        "Review the payment service logs for connection pool usage, timeout counts, and retry attempts.",
+        "If network is healthy, consider increasing request timeout or adjusting retry/backoff settings, and monitor for improvement.",
+        "Escalate to the Payments team if the issue persists after confirming external Stripe health."
+      ]
+    }, "result": "FINISHED"}
   ]
 }
 ```
